@@ -460,7 +460,7 @@ stages:
             steps:
               - template: linux/product-build-linux.yml
                 parameters:
-                  VSCODE_ARCH: x64
+                  VSCODE_ARCH: armhf
                   VSCODE_QUALITY: ${{ variables.VSCODE_QUALITY }}
                   VSCODE_BUILD_TUNNEL_CLI: ${{ parameters.VSCODE_BUILD_TUNNEL_CLI }}
                   VSCODE_RUN_UNIT_TESTS: false

@@ -32,7 +32,7 @@ function run(command, args, opts) {
  */
 function yarnInstall(dir, opts) {
 	opts = {
-		env: process.env,
+		env: { ...process.env },
 		...(opts ?? {}),
 		cwd: dir,
 		stdio: 'inherit',
@@ -51,7 +51,21 @@ function yarnInstall(dir, opts) {
 	if (process.env['VSCODE_REMOTE_DEPENDENCIES_CONTAINER_NAME'] && /^(.build\/distro\/npm\/)?remote$/.test(dir)) {
 		const userinfo = os.userInfo();
 		console.log(`Installing dependencies in ${dir} inside container ${process.env['VSCODE_REMOTE_DEPENDENCIES_CONTAINER_NAME']}...`);
-		run('docker', ['run', '-e', 'GITHUB_TOKEN', '-v', `${root}:/root/vscode`, '-v', `${userinfo.homedir}/.netrc:/root/.netrc`, process.env['VSCODE_REMOTE_DEPENDENCIES_CONTAINER_NAME'], 'yarn', ...args], opts);
+
+		const hostHomeDir = process.env['VSCODE_CONTAINER_HOST_HOMEDIR'] ?? userinfo.homedir;
+		const hostRoot = process.env['VSCODE_CONTAINER_HOST_ROOT'] ?? root;
+		opts = {
+			...opts,
+			env: {
+				...opts.env,
+				VSCODE_CONTAINER_HOST_HOMEDIR: hostHomeDir,
+				VSCODE_CONTAINER_HOST_ROOT: hostRoot
+			},
+			cwd: root
+		};
+
+		run('docker', ['run', '-e', 'GITHUB_TOKEN', '-v', `/mnt/vss/_work/1/s:/root/vscode`, '-v', `${hostHomeDir}/.netrc:/root/.netrc`, process.env['VSCODE_REMOTE_DEPENDENCIES_CONTAINER_NAME'], 'ls', '-la', '/root/vscode'], opts);
+		run('docker', ['run', '-e', 'GITHUB_TOKEN', '-v', `/mnt/vss/_work/1/s:/root/vscode`, '-v', `${hostHomeDir}/.netrc:/root/.netrc`, process.env['VSCODE_REMOTE_DEPENDENCIES_CONTAINER_NAME'], 'yarn', '--cwd', dir, ...args], opts);
 		run('sudo', ['chown', '-R', `${userinfo.uid}:${userinfo.gid}`, `${dir}/node_modules`], opts);
 	} else {
 		console.log(`Installing dependencies in ${dir}...`);
